@@ -8,6 +8,6 @@ app.get("/", (req, res) => {
     res.json({ message: "z-auth test server running!" });
 });
 
-app.listen(3000, () => {
-    console.log("Test server running on http://localhost:3000");
+app.listen(3001, () => {
+    console.log("Test server running on http://localhost:3001");
 });
