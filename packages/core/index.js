@@ -57,7 +57,40 @@ function verifySignature({ address, message, signature }) {
       return { valid: false, reason: "Invalid Zcash mainnet address" };
     }
 
-    const isValid = bitcoinMessage.verify(message, address, signature);
+    // Decode address to get the public key hash (skip 2-byte Zcash prefix)
+    const decoded = bs58check.decode(address);
+    const addressPubKeyHash = Buffer.from(decoded).slice(2);
+
+    // Recover public key from signature
+    const sigBuffer = Buffer.from(signature, "base64");
+    const flagByte = sigBuffer[0] - 27;
+    const compressed = !!(flagByte & 4);
+
+    const messageHash = bitcoinMessage.magicHash(message);
+
+    const secp256k1 = require("tiny-secp256k1");
+    const recoveryId = flagByte & 3;
+    const sigOnly = sigBuffer.slice(1);
+
+    const recovered = secp256k1.recover(
+      messageHash,
+      sigOnly,
+      recoveryId,
+      compressed
+    );
+
+    if (!recovered) {
+      return { valid: false, reason: "Could not recover public key" };
+    }
+
+    // Hash the recovered public key
+    const crypto = require("crypto");
+    const recoveredHash = crypto
+      .createHash("ripemd160")
+      .update(crypto.createHash("sha256").update(recovered).digest())
+      .digest();
+
+    const isValid = recoveredHash.equals(addressPubKeyHash);
     return { valid: isValid, reason: isValid ? "OK" : "Signature mismatch" };
   } catch (e) {
     return { valid: false, reason: e.message };
