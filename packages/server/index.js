@@ -30,7 +30,7 @@ function zauth(options = {}) {
     challengeStore.set(address, challenge);
 
     // Auto-expire from store after 5 minutes
-    setTimeout(() => challengeStore.delete(address), 5 * 60 * 1000);
+    setTimeout(() => challengeStore.delete(address), 60 * 60 * 1000);
 
     res.json({ message: challenge.message, timestamp: challenge.timestamp });
   });
@@ -67,7 +67,12 @@ function zauth(options = {}) {
 
     return res.status(401).json({ authenticated: false, reason: result.reason });
   });
-
+// Demo seed endpoint (development only)
+  router.post("/zauth/seed", (req, res) => {
+    const { address, message, timestamp } = req.body;
+    challengeStore.set(address, { message, timestamp });
+    res.json({ seeded: true });
+  });
   return router;
 }
 

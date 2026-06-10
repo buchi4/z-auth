@@ -3,7 +3,6 @@ import { useState } from "react";
 
 export default function Home() {
   const [address, setAddress] = useState("");
-  const [challenge, setChallenge] = useState("");
   const [signature, setSignature] = useState("");
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
@@ -11,26 +10,8 @@ export default function Home() {
 
   const SERVER_URL = "http://localhost:3001";
 
-  // Step 1: Request challenge
-  async function requestChallenge() {
-    if (!address) return setError("Please enter your Zcash t-address");
-    setStatus("loading");
-    setError("");
-
-    try {
-      const res = await fetch(`${SERVER_URL}/zauth/challenge?address=${address}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setChallenge(data.message);
-      setStatus("awaiting_signature");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      setStatus("error");
-    }
-  }
-
-  // Step 2: Verify signature
   async function verify() {
+    if (!address) return setError("Please enter your Zcash t-address");
     if (!signature) return setError("Please paste your signature");
     setStatus("verifying");
     setError("");
@@ -49,14 +30,13 @@ export default function Home() {
         throw new Error(data.reason || "Authentication failed");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(err.message);
       setStatus("error");
     }
   }
 
   function reset() {
     setAddress("");
-    setChallenge("");
     setSignature("");
     setStatus("idle");
     setError("");
@@ -91,8 +71,8 @@ export default function Home() {
           <p className="text-gray-400">Sign in with Zcash. No account needed.</p>
         </div>
 
-        {/* Step 1 */}
-        <div className={`mb-6 p-6 rounded-xl border ${status !== "idle" && status !== "error" ? "border-yellow-400/50 bg-gray-900" : "border-gray-800 bg-gray-900"}`}>
+        {/* Address */}
+        <div className="mb-6 p-6 rounded-xl border border-gray-800 bg-gray-900">
           <div className="flex items-center gap-3 mb-4">
             <span className="w-7 h-7 rounded-full bg-yellow-400 text-black text-sm font-bold flex items-center justify-center">1</span>
             <h2 className="font-semibold">Enter your Zcash t-address</h2>
@@ -104,50 +84,29 @@ export default function Home() {
             placeholder="t1..."
             className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 text-sm font-mono focus:outline-none focus:border-yellow-400 transition"
           />
-          <button
-            onClick={requestChallenge}
-            disabled={status === "loading"}
-            className="mt-3 w-full bg-yellow-400 text-black font-bold py-3 rounded-lg hover:bg-yellow-300 transition disabled:opacity-50"
-          >
-            {status === "loading" ? "Generating challenge..." : "Get Challenge"}
-          </button>
         </div>
 
-        {/* Step 2 */}
-        {challenge && (
-          <div className="mb-6 p-6 rounded-xl border border-gray-800 bg-gray-900">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="w-7 h-7 rounded-full bg-yellow-400 text-black text-sm font-bold flex items-center justify-center">2</span>
-              <h2 className="font-semibold">Sign this message in your wallet</h2>
-            </div>
-            <pre className="text-xs font-mono bg-black p-4 rounded-lg text-yellow-300 whitespace-pre-wrap break-all mb-3">{challenge}</pre>
-            <p className="text-gray-500 text-xs">Copy this message and sign it using your Zcash wallet (e.g. Zashi → Settings → Sign Message)</p>
+        {/* Signature */}
+        <div className="mb-6 p-6 rounded-xl border border-gray-800 bg-gray-900">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="w-7 h-7 rounded-full bg-yellow-400 text-black text-sm font-bold flex items-center justify-center">2</span>
+            <h2 className="font-semibold">Paste your wallet signature</h2>
           </div>
-        )}
-
-        {/* Step 3 */}
-        {challenge && (
-          <div className="mb-6 p-6 rounded-xl border border-gray-800 bg-gray-900">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="w-7 h-7 rounded-full bg-yellow-400 text-black text-sm font-bold flex items-center justify-center">3</span>
-              <h2 className="font-semibold">Paste your signature</h2>
-            </div>
-            <textarea
-              value={signature}
-              onChange={(e) => setSignature(e.target.value)}
-              placeholder="Paste signature here..."
-              rows={4}
-              className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 text-sm font-mono focus:outline-none focus:border-yellow-400 transition resize-none"
-            />
-            <button
-              onClick={verify}
-              disabled={status === "verifying"}
-              className="mt-3 w-full bg-yellow-400 text-black font-bold py-3 rounded-lg hover:bg-yellow-300 transition disabled:opacity-50"
-            >
-              {status === "verifying" ? "Verifying..." : "Verify & Sign In"}
-            </button>
-          </div>
-        )}
+          <textarea
+            value={signature}
+            onChange={(e) => setSignature(e.target.value)}
+            placeholder="Paste signature here..."
+            rows={4}
+            className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 text-sm font-mono focus:outline-none focus:border-yellow-400 transition resize-none"
+          />
+          <button
+            onClick={verify}
+            disabled={status === "verifying"}
+            className="mt-3 w-full bg-yellow-400 text-black font-bold py-3 rounded-lg hover:bg-yellow-300 transition disabled:opacity-50"
+          >
+            {status === "verifying" ? "Verifying..." : "Verify & Sign In"}
+          </button>
+        </div>
 
         {/* Error */}
         {error && (
@@ -156,7 +115,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Footer */}
         <p className="text-center text-gray-600 text-xs mt-8">
           Powered by z-auth · Privacy-first authentication for Zcash
         </p>
